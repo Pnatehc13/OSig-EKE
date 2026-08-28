@@ -5,7 +5,7 @@
 
 
 struct PMM_API;
-
+struct SCHED_API;
 
 
 struct KernelAPI
@@ -19,6 +19,7 @@ struct KernelAPI
 struct Kernel
 {
 	struct PMM_API* pmm; 
+	struct SCHED_API* sched;
 };
 
 

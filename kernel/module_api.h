@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include "kernel_api.h"
-
+#include "process_api.h"
 #define MAGICNUM 0x454B4531
 
 enum ModuleType
@@ -33,6 +33,11 @@ struct PMM_API
 	void (*free_page)(uint64_t addr);
 };
 
+struct SCHED_API
+{
+	void (*add_task)(struct Process* proc);
+	struct Process* (*pick_next)(struct Process* current);
+};
 
 typedef void* (*module_init_t)(const KernelAPI* api);
 #endif

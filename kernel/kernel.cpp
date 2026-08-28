@@ -2,38 +2,57 @@
 #include "../memory/pmm.h"
 #include "kernel_api.h"
 #include "module_api.h"
-
-
+#include "../interrupts/idt.h"
+#include "../memory/vmm.h"
+#include "process_api.h"
+#include "task.h"
 
 KernelAPI kapi;
 struct Kernel gk;
 
+void task1() {
+    while (true) {
+        kprintf("[TASK 1] Running...\n");
+        for (volatile int i = 0; i < 30000000; i++);
+    }
+}
+
+void task2() {
+    while (true) {
+        kprintf("[TASK 2] Hello from Task 2!\n");
+        for (volatile int i = 0; i < 30000000; i++);
+    }
+}
 
 extern "C" void kernel_main() {
-    // Initialize terminal screen (clears screen, sets cyan text)
     terminal_initialize();
     
-	
     init_pmm();
-
-    kapi.log = kprintf;
-	kapi.alloc_page = alloc_page;
-	kapi.free_page = free_page;
-
-	kprintf("[KERNEL] Substrate booted. Loading Module...\n\n");
+    init_vmm();
+    init_idt();
 
 
-	 kprintf("[DEBUG] Module Start: %x | Module End: %x\n", &_module_start, &_module_end);
-	for(ModuleHeader* t= &_module_start;t< &_module_end;++t)
+    ModuleHeader* mod = &_module_start;
+	while (mod < &_module_end) 
 	{
-		kprintf("[KERNEL] Got into forloop\n");
-		if(t->type==MT_PMM)
-		{
-			kprintf("[KERNEL] Got into a module\n");
-			gk.pmm = (PMM_API*) t->module_init(&kapi);
-			uintptr_t p1 = gk.pmm->alloc_page(1);
-			kprintf("[KERNEL] Module allocated page at: %x\n", p1);
-		}
+	    if (mod->magic == MAGICNUM) 
+	    {
+            if (mod->type == MT_SCHEDULER) 
+            {
+		   		gk.sched = (struct SCHED_API*)mod->module_init(&kapi);
+                kprintf("[MODULE] Loaded: %s\n", mod->name);
+			}
+        }
+        mod++;
 	}
 
+    init_tasks();
+    create_task(task1);
+    create_task(task2);
+
+    kprintf("[KERNEL] Multitasking Started!\n");
+
+    while (true) {
+        asm volatile("hlt");
+    }
 }
