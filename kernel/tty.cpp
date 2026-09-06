@@ -12,6 +12,18 @@ static unsigned short vga_entry(char c, unsigned char color) {
     return (unsigned short)c | ((unsigned short)color << 8);
 }
 
+static inline void outb(unsigned short port, unsigned char val) {
+    asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
+static void update_hardware_cursor() {
+    unsigned short pos = terminal_row * VGA_WIDTH + terminal_column;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (unsigned char)(pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (unsigned char)((pos >> 8) & 0xFF));
+}
+
 static void terminal_scroll() {
     // Shift all rows up by 1
     for (unsigned int y = 0; y < VGA_HEIGHT - 1; ++y) {
@@ -36,6 +48,7 @@ extern "C" void terminal_initialize() {
             VGA_BUFFER[y * VGA_WIDTH + x] = vga_entry(' ', terminal_color);
         }
     }
+    update_hardware_cursor();
 }
 
 extern "C" void terminal_setcolor(unsigned char color) {
@@ -43,11 +56,20 @@ extern "C" void terminal_setcolor(unsigned char color) {
 }
 
 extern "C" void terminal_putchar(char c) {
+	if (c == '\b') {
+        if (terminal_column > 0) {
+            terminal_column--;
+            VGA_BUFFER[terminal_row * VGA_WIDTH + terminal_column] = vga_entry(' ', terminal_color);
+            update_hardware_cursor();
+        }
+        return;
+    }
     if (c == '\n') {
         terminal_column = 0;
         if (++terminal_row == VGA_HEIGHT) {
             terminal_scroll();
         }
+        update_hardware_cursor();
         return;
     }
 
@@ -58,6 +80,7 @@ extern "C" void terminal_putchar(char c) {
             terminal_scroll();
         }
     }
+    update_hardware_cursor();
 }
 
 extern "C" void terminal_writestring(const char* data) {

@@ -34,6 +34,7 @@ Process* create_task(void (*entry_point)())
 	uintptr_t stack = alloc_page(1);
 	
 	Registers* r = (Registers*)(stack+4096-sizeof(Registers));
+	map_in_pd(p, stack, stack, PTE_P | PTE_W);
 
 	r->ds = 0x10;
 	r->edi = 0;

@@ -6,7 +6,7 @@
 
 struct PMM_API;
 struct SCHED_API;
-
+struct HEAP_API;
 
 struct KernelAPI
 {
@@ -20,6 +20,12 @@ struct Kernel
 {
 	struct PMM_API* pmm; 
 	struct SCHED_API* sched;
+	struct HEAP_API* heap;
+	struct HEAP_API* oldheap;
+
+	uint32_t heapcnt;
+	uint32_t oldcnt;
+	uint32_t flag;
 };
 
 

@@ -12,7 +12,8 @@ enum ModuleType
 	MT_SCHEDULER = 1,
 	MT_HEAP = 2,
 	MT_PMM = 3,
-	MT_IPC = 4
+	MT_IPC = 4,
+	MT_FS = 5
 };
 
 typedef struct ModuleHeader
@@ -37,6 +38,17 @@ struct SCHED_API
 {
 	void (*add_task)(struct Process* proc);
 	struct Process* (*pick_next)(struct Process* current);
+};
+
+struct HEAP_API
+{
+	void* (*kmalloc)(uint32_t size);
+	bool (*kfree)(void* ptr);
+};
+
+struct FS_API
+{
+		
 };
 
 typedef void* (*module_init_t)(const KernelAPI* api);

@@ -10,7 +10,7 @@ CXXFLAGS = -m32 -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -I
 LDFLAGS = -m elf_i386 -T kernel/linker.ld
 
 # Object Files
-KERNEL_OBJS = kernel/boot.o kernel/tty.o kernel/kernel.o kernel/task.o memory/pmm.o memory/vmm.o interrupts/idt.o interrupts/idt_asm.o drivers/keyboard.o
+KERNEL_OBJS = kernel/boot.o kernel/tty.o kernel/kernel.o kernel/task.o kernel/shell.o memory/heap.o memory/pmm.o memory/vmm.o interrupts/idt.o interrupts/idt_asm.o drivers/keyboard.o
 MODULE_OBJS = $(patsubst %.cpp, %.o, $(wildcard modules/*.cpp modules/*/*.cpp))
 KERNEL_BIN = kernel/kernel.bin
 
@@ -29,10 +29,16 @@ kernel/kernel.o: kernel/kernel.cpp
 kernel/task.o: kernel/task.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+kernel/shell.o: kernel/shell.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 memory/pmm.o : memory/pmm.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 memory/vmm.o : memory/vmm.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+memory/heap.o: memory/heap.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 interrupts/idt.o : interrupts/idt.cpp
