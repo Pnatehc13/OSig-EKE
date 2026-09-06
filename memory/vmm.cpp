@@ -8,6 +8,7 @@ __attribute__((aligned(4096))) uint32_t Kernel_page_tab[1024];
 
 void init_vmm()
 {
+/*
 	for (int i = 0; i < 1024; i++) 
 	{
 	        page_dir[i] = 0;
@@ -23,7 +24,7 @@ void init_vmm()
     asm volatile("mov %%cr0, %0" : "=r"(cr0));
     cr0 |= 0x80000000;
     asm volatile("mov %0, %%cr0" : : "r"(cr0));
-	        
+*/	        
 }
 
 void map_in_pd(Process* pd,uintptr_t virt, uintptr_t phys, uint32_t flags)
@@ -38,7 +39,7 @@ void map_in_pd(Process* pd,uintptr_t virt, uintptr_t phys, uint32_t flags)
 		{
 			tp[i] = 0;
 		}
-		pd->page_dir[dir_idx] =(uint32_t) tp | flags;	
+		pd->page_dir[dir_idx] =(uint64_t) tp | flags;	
 	}
 	uintptr_t* pt = (uintptr_t*)(pd->page_dir[dir_idx] & 0xFFFFF000);
 	pt[tab_idx] =( phys & 0xFFFFF000)|flags;

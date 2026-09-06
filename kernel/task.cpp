@@ -9,7 +9,6 @@
 #include "../memory/pmm.h"
 
 extern Kernel gk;
-extern uint32_t page_dir[1024]; 
 Process kernel_task; 
 Process* curr_task = 0;
 static int next_pid = 0;
@@ -17,7 +16,6 @@ static int next_pid = 0;
 void init_tasks()
 {
 	kernel_task.pid = 0;
-	kernel_task.page_dir=(uintptr_t*)page_dir;
 	kernel_task.state = 2;
 	curr_task = &kernel_task;
 	if(gk.sched)gk.sched->add_task(&kernel_task);
@@ -26,39 +24,33 @@ void init_tasks()
 
 Process* create_task(void (*entry_point)())
 {
-	Process* p = (Process*)alloc_page(1);
-	p->pid = ++next_pid;
-	p->vnext = 0x40000000;
+    Process* p = (Process*)alloc_page(1);
+    p->pid = ++next_pid;
+    p->vnext = 0x40000000;
 
-	gen_vm(p);
-	uintptr_t stack = alloc_page(1);
-	
-	Registers* r = (Registers*)(stack+4096-sizeof(Registers));
-	map_in_pd(p, stack, stack, PTE_P | PTE_W);
+    uintptr_t stack = alloc_page(1);
 
-	r->ds = 0x10;
-	r->edi = 0;
-	r->esi = 0;
-	r->ebp = 0;
-	r->esp = 0;
-	r->ebx = 0;
-	r->eax = 0;
-	r->ecx = 0;
-	r->edx = 0;
+    Registers* r = (Registers*)(stack + 4096 - sizeof(Registers));
 
-	r->int_no = 32;
-	r->err_code = 0;
-	r->eip = (uint32_t) entry_point;
-	r->cs = 0x08;
-	r->eflags = 0x202;
+    r->r15 = 0; r->r14 = 0; r->r13 = 0; r->r12 = 0;
+    r->r11 = 0; r->r10 = 0; r->r9  = 0; r->r8  = 0;
+    r->rbp = 0; r->rdi = 0; r->rsi = 0; r->rdx = 0;
+    r->rcx = 0; r->rbx = 0; r->rax = 0;
 
-	p->reg = r;
+    r->int_no = 32;
+    r->err_code = 0;
+    r->rip = (uint64_t)entry_point;
+    r->cs = 0x08;                     // 64-bit Code Segment
+    r->rflags = 0x202;		  // Interrupts enabled
+    r->rsp = (uint64_t)(stack + 4096 - sizeof(Registers));
+    r->ss = 0x10;                     // 64-bit Data Segment
 
-	p->state = 1;
-	if(gk.sched) gk.sched->add_task(p);
-	return p;
-	
+    p->reg = r;
+    p->state = 1;
+    if (gk.sched) gk.sched->add_task(p);
+    return p;
 }
+
 
 
 struct Registers* schedule_next_task(struct Registers* regs)
@@ -68,7 +60,6 @@ struct Registers* schedule_next_task(struct Registers* regs)
 	
     Process* next = gk.sched->pick_next(curr_task);
   	curr_task = next;                               
-	asm volatile("mov %0, %%cr3" : : "r"(next->page_dir));
 	return next->reg;
 }
 

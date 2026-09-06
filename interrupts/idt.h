@@ -8,27 +8,29 @@ struct IDTEntry
 {
 	uint16_t isr_low;
 	uint16_t kernel_cs;
-	uint8_t  reserved;
+	uint8_t  ist;
 	uint8_t  attributes;
-	uint16_t isr_high;
+	uint16_t isr_mid;
+	uint32_t isr_high;
+	uint32_t reserved;
 }__attribute__((packed));
 
 struct IDTPtr
 {
 	uint16_t limit;
-	uint32_t base;
+	uint64_t base;
 } __attribute__((packed));
 
 
-struct Registers
-{
-	uint32_t ds;
-	uint32_t edi,esi,ebp,esp,ebx,edx,ecx,eax;
-	uint32_t int_no , err_code;
-	uint32_t eip,cs,eflags,useresp,ss;
+struct Registers {
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
+    uint64_t int_no, err_code;
+    uint64_t rip, cs, rflags, rsp, ss; // Pushed automatically by 64-bit CPU!
 };
 
+
 void init_idt();
-void set_idt_gate(int n,uint32_t handler,uint8_t flags);
+void set_idt_gate(int n,uint64_t handler,uint8_t flags);
 
 #endif

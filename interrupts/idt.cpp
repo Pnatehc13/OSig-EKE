@@ -7,18 +7,21 @@
 struct IDTEntry idt[256];
 struct IDTPtr idtptr;
 
-void set_idt_gate(int n,uint32_t handler , uint8_t flags)
+
+
+void set_idt_gate(int n, uint64_t handler, uint8_t flags)
 {
-	idt[n].isr_low = handler&((1<<16)-1);
-	idt[n].isr_high = handler>>16;
-	idt[n].attributes = flags;
-	idt[n].kernel_cs = 0x08;
-	idt[n].reserved = 0;
+    idt[n].isr_low = handler & 0xFFFF;
+    idt[n].kernel_cs = 0x08;
+    idt[n].ist = 0;
+    idt[n].attributes = flags;
+    idt[n].isr_mid = (handler >> 16) & 0xFFFF;
+    idt[n].isr_high = (handler >> 32) & 0xFFFFFFFF;
+    idt[n].reserved = 0;
 }
 
-
 extern "C" void* isr_stub_table[256];
-extern "C" void idtload(uint32_t addr);
+extern "C" void idtload(uint64_t addr);
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -34,21 +37,21 @@ void pic_remap()
 	outb(0x21, 0x00); outb(0xA1, 0x00); // Unmask IRQs
 }
 
+
 void init_idt()
 {
-	idtptr.limit = (sizeof(IDTEntry)*256) - 1;
-	idtptr.base = (uint32_t)&idt[0];
+    idtptr.limit = (sizeof(IDTEntry) * 256) - 1;
+    idtptr.base = (uint64_t)&idt[0];
 
-	for(int i=0;i<256;i++)
-	{
-		uint8_t f = (i==0x80)?0xEE:0x8E;
-		set_idt_gate(i,(uint32_t)isr_stub_table[i],f);
-	}
-	idtload((uint32_t)&idtptr);
-	pic_remap();
-	asm volatile("sti");
+    for (int i = 0; i < 256; i++)
+    {
+        uint8_t f = (i == 0x80) ? 0xEE : 0x8E;
+        set_idt_gate(i, (uint64_t)isr_stub_table[i], f);
+    }
+    idtload((uint64_t)&idtptr);
+    pic_remap();
+    asm volatile("sti");
 }
-
 
 
 extern "C" Registers* isr_handler(Registers * regs)
@@ -68,7 +71,7 @@ extern "C" Registers* isr_handler(Registers * regs)
 	}
 	else 
 	{
-		 kprintf("[INTERRUPT] Fired Interrupt: %d | Error Code: %d | EIP: %x\n", regs->int_no, regs->err_code, regs->eip);
+		 kprintf("[INTERRUPT] Fired Interrupt: %d | Error Code: %d | EIP: %x\n", regs->int_no, regs->err_code, regs->rip);
 	}
 	return regs;
 }

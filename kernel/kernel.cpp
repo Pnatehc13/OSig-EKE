@@ -11,7 +11,7 @@
 
 KernelAPI kapi;
 struct Kernel gk;
-
+/*
 void task1() {
     while (true) {
         char* buf = (char*)halloc(32);
@@ -35,7 +35,7 @@ void task2() {
         for (volatile int i = 0; i < 30000000; i++);
     }
 }
-
+*/
 extern "C" void kernel_main() {
     terminal_initialize();
     

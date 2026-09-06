@@ -2,12 +2,12 @@
 AS = as
 CXX = g++
 LD = ld
-QEMU = qemu-system-i386
+QEMU = qemu-system-x86_64
 
 # Compilation Flags (-fno-stack-protector disabled SSP for bare metal)
-ASFLAGS = --32
-CXXFLAGS = -m32 -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -Ikernel
-LDFLAGS = -m elf_i386 -T kernel/linker.ld
+ASFLAGS = --64
+CXXFLAGS = -m64 -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -mno-red-zone -Ikernel
+LDFLAGS = -m elf_x86_64 -T kernel/linker.ld
 
 # Object Files
 KERNEL_OBJS = kernel/boot.o kernel/tty.o kernel/kernel.o kernel/task.o kernel/shell.o memory/heap.o memory/pmm.o memory/vmm.o interrupts/idt.o interrupts/idt_asm.o drivers/keyboard.o
@@ -57,6 +57,7 @@ drivers/keyboard.o : drivers/keyboard.cpp
 
 $(KERNEL_BIN): $(KERNEL_OBJS) $(MODULE_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJS) $(MODULE_OBJS)
+	objcopy -O elf32-i386 $@ $@
 # Build and Launch QEMU
 run: $(KERNEL_BIN) 
 	$(QEMU) -kernel $(KERNEL_BIN) 
