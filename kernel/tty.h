@@ -27,6 +27,9 @@ void terminal_setcolor(unsigned char color);
 void terminal_putchar(char c);
 void terminal_writestring(const char* data);
 void kprintf(const char* format, ...);
+void terminal_scroll_up(int lines);
+void terminal_scroll_down(int lines);
+void terminal_scroll_reset();
 }
 
 #endif

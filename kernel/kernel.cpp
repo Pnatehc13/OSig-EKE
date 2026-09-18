@@ -46,6 +46,10 @@ extern "C" void kernel_main() {
     kapi.log = kprintf;
     kapi.alloc_page = alloc_page;
     kapi.free_page = free_page;
+    
+    gk.disk_count = 0;
+    gk.current_disk = nullptr;
+    gk.fs = nullptr;
 
     ModuleHeader* mod = &_module_start;
 	while (mod < &_module_end) 
@@ -61,6 +65,20 @@ extern "C" void kernel_main() {
 			    gk.heap = (struct HEAP_API*)mod->module_init(&kapi);
 			    kprintf("[MODULE] Loaded: %s\n", mod->name);
 			}
+			if (mod->type == MT_BLOCKDEV) {
+	            if (gk.disk_count < 8) {
+	                BLOCKDEV_API* dev = (BLOCKDEV_API*)mod->module_init(&kapi);
+	                if (dev) {
+	                    gk.disks[gk.disk_count++] = dev;
+	                    if (!gk.current_disk) gk.current_disk = dev; // First drive becomes active
+	                    kprintf("[MODULE] Block Device: %s (%s)\n", mod->name, dev->name);
+	                }
+	            }
+	        }
+	        if (mod->type == MT_FS) {
+                gk.fs = (FS_API*)mod->module_init(&kapi);
+                kprintf("[MODULE] Filesystem: %s\n", mod->name);
+            }
         }
         mod++;
 	}

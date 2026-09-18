@@ -52,6 +52,24 @@ void keyboard_handler(struct Registers* reg)
         key_state[scancode] = true;
 		if(scancode < 0x80)
 		{
+			// Handle scrolling keys directly:
+			if (scancode == 0x49) { // Page Up
+				terminal_scroll_up(5);
+				return;
+			}
+			if (scancode == 0x51) { // Page Down
+				terminal_scroll_down(5);
+				return;
+			}
+			if (is_shift_down() && scancode == 0x48) { // Shift + Up
+				terminal_scroll_up(1);
+				return;
+			}
+			if (is_shift_down() && scancode == 0x50) { // Shift + Down
+				terminal_scroll_down(1);
+				return;
+			}
+
 			char c = 0;
 			if (is_ctrl_down()) {
 			    char base = scancode_map[scancode];
@@ -65,6 +83,7 @@ void keyboard_handler(struct Registers* reg)
 		
 			if(c!=0)
 			{
+				terminal_scroll_reset();
 				if ((write_idx + 1) % 128 == read_idx)
 				{
 				    read_idx = (read_idx + 1) % 128;

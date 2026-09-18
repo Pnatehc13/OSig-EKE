@@ -10,7 +10,7 @@ CXXFLAGS = -m64 -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -m
 LDFLAGS = -m elf_x86_64 -T kernel/linker.ld
 
 # Object Files
-KERNEL_OBJS = kernel/boot.o kernel/tty.o kernel/kernel.o kernel/task.o kernel/shell.o memory/heap.o memory/pmm.o memory/vmm.o interrupts/idt.o interrupts/idt_asm.o drivers/keyboard.o
+KERNEL_OBJS = kernel/boot.o kernel/tty.o kernel/kernel.o kernel/task.o kernel/shell.o memory/heap.o memory/pmm.o memory/vmm.o interrupts/idt.o interrupts/idt_asm.o drivers/keyboard.o storage/spmm.o
 MODULE_OBJS = $(patsubst %.cpp, %.o, $(wildcard modules/*.cpp modules/*/*.cpp))
 KERNEL_BIN = kernel/kernel.bin
 
@@ -48,6 +48,9 @@ interrupts/idt_asm.o : interrupts/idt_asm.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 drivers/keyboard.o : drivers/keyboard.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+storage/spmm.o : storage/spmm.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %.o : %.cpp

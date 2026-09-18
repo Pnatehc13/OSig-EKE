@@ -3,15 +3,14 @@
 
 #include <stdint.h>
 #include "../kernel/process_api.h"
-#define PTE_P 0x01
-#define PTE_W 0x02
-#define PTE_U 0x04
+#define PTE_P  (1ULL << 0) // Present
+#define PTE_W  (1ULL << 1) // Writable
+#define PTE_U  (1ULL << 2) // User accessible
 
 
 void init_vmm();
-void map_in_pd(Process* pd,uintptr_t virt, uintptr_t phys, uint32_t flags);
-uintptr_t vmm_alloc_page(Process* p, uint32_t flags);
-void gen_vm(Process* p);
 
+
+void vmm_map_page(uintptr_t virt, uintptr_t phys, uint64_t flags);
 
 #endif
