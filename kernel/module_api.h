@@ -26,8 +26,13 @@ typedef struct ModuleHeader
 }ModuleHeader;
 
 
+#ifdef __cplusplus
 extern "C" ModuleHeader _module_start;
 extern "C" ModuleHeader _module_end;
+#else
+extern ModuleHeader _module_start;
+extern ModuleHeader _module_end;
+#endif
 
 struct PMM_API
 {

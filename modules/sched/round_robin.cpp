@@ -18,8 +18,13 @@ static int current_idx = 0;
 Process* rr_pick_next(Process* current)
 {
     if (queue_count == 0) return current;
-	current_idx = (current_idx + 1) % queue_count;
-	return ready_queue[current_idx];
+    for (int i = 0; i < queue_count; i++) {
+        current_idx = (current_idx + 1) % queue_count;
+        if (ready_queue[current_idx] && ready_queue[current_idx]->state > 0) {
+            return ready_queue[current_idx];
+        }
+    }
+    return current;
 }
 
  static struct SCHED_API rr_api = {
@@ -29,6 +34,8 @@ Process* rr_pick_next(Process* current)
 
 void* rr_init(const KernelAPI* api)
 {
+	queue_count = 0;
+	current_idx = 0;
 	return (void*)&rr_api;
 }
 

@@ -13,11 +13,17 @@ Process kernel_task;
 Process* curr_task = 0;
 static int next_pid = 0;
 
+Process* listhead = nullptr;
+Process* listtail = nullptr;
+
 void init_tasks()
 {
 	kernel_task.pid = 0;
 	kernel_task.state = 2;
+	kernel_task.next = nullptr;
 	curr_task = &kernel_task;
+	listhead = &kernel_task;
+	listtail = &kernel_task;
 	if(gk.sched)gk.sched->add_task(&kernel_task);
 }
 
@@ -47,7 +53,13 @@ Process* create_task(void (*entry_point)())
 
     p->reg = r;
     p->state = 1;
+    p->sched_data = nullptr;
+    p->next = nullptr;
     if (gk.sched) gk.sched->add_task(p);
+
+    listtail->next = p;
+    listtail = p;
+
     return p;
 }
 

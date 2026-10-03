@@ -21,7 +21,9 @@ enum vga_color {
     VGA_COLOR_WHITE = 15,
 };
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 void terminal_initialize();
 void terminal_setcolor(unsigned char color);
 void terminal_putchar(char c);
@@ -30,6 +32,9 @@ void kprintf(const char* format, ...);
 void terminal_scroll_up(int lines);
 void terminal_scroll_down(int lines);
 void terminal_scroll_reset();
+void update_cursor(int x, int y);
+#ifdef __cplusplus
 }
+#endif
 
 #endif

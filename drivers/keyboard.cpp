@@ -79,7 +79,15 @@ void keyboard_handler(struct Registers* reg)
 				}
 			} 
 			else if (is_shift_down()) c = scancode_map_shift[scancode];
-			else c = scancode_map[scancode];
+			else {
+				c = scancode_map[scancode];
+				if (c == 0) {
+					if (scancode == 0x48) c = KEY_UP;
+					else if (scancode == 0x50) c = KEY_DOWN;
+					else if (scancode == 0x4B) c = KEY_LEFT;
+					else if (scancode == 0x4D) c = KEY_RIGHT;
+				}
+			}
 		
 			if(c!=0)
 			{
@@ -115,6 +123,28 @@ char get_key()
 	{
 		char c = key_buffer[read_idx];
 		read_idx = (read_idx + 1) % 128; 
+		return c;
+	}
+	// Check serial COM1 (0x3F8) for terminal/script input
+	if (inb(0x3F8 + 5) & 1) {
+		char c = (char)inb(0x3F8);
+		if (c == '\r') c = '\n';
+		if (c == 27) { // ANSI escape sequence for arrows \033[A/B/C/D
+			for (volatile int d = 0; d < 1000; d = d + 1);
+			if (inb(0x3F8 + 5) & 1) {
+				char c2 = (char)inb(0x3F8);
+				if (c2 == '[') {
+					for (volatile int d = 0; d < 1000; d = d + 1);
+					if (inb(0x3F8 + 5) & 1) {
+						char c3 = (char)inb(0x3F8);
+						if (c3 == 'A') return KEY_UP;
+						if (c3 == 'B') return KEY_DOWN;
+						if (c3 == 'C') return KEY_RIGHT;
+						if (c3 == 'D') return KEY_LEFT;
+					}
+				}
+			}
+		}
 		return c;
 	}
 	return 0;

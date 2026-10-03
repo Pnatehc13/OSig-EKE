@@ -23,7 +23,7 @@ void* halloc(uint32_t size)
 void hfree(void* addr)
 {
 	bool f = false;
-	if((gk.flag&1) == 1)
+	if(((gk.flag & 1) == 1) && gk.oldheap)
 	{	
 	   f = gk.oldheap->kfree(addr);
 	   if(f) gk.oldcnt--;
@@ -35,8 +35,9 @@ void hfree(void* addr)
 			gk.heapcnt--;
 		}
 	}
-	if((gk.flag&1)==1 && gk.oldcnt <= 0){
+	if(((gk.flag & 1) == 1) && gk.oldcnt <= 0){
 		gk.oldheap = nullptr;
+		gk.flag &= ~1;
 	}
 }
 

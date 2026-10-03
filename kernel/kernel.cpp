@@ -50,34 +50,64 @@ extern "C" void kernel_main() {
     gk.disk_count = 0;
     gk.current_disk = nullptr;
     gk.fs = nullptr;
+    gk.sched = nullptr;
+    gk.heap = nullptr;
+    gk.pmm = nullptr;
+    gk.sched_mod_count = 0;
+    gk.heap_mod_count = 0;
+    gk.pmm_mod_count = 0;
+    gk.block_mod_count = 0;
+    gk.fs_mod_count = 0;
+    gk.total_mod_count = 0;
 
     ModuleHeader* mod = &_module_start;
 	while (mod < &_module_end) 
 	{
 	    if (mod->magic == MAGICNUM) 
 	    {
-            if (mod->type == MT_SCHEDULER) 
+            if (gk.total_mod_count < 32) {
+                gk.all_mods[gk.total_mod_count++] = mod;
+            }
+
+            if (mod->type == MT_SCHEDULER && gk.sched_mod_count < 8) 
             {
-		   		gk.sched = (struct SCHED_API*)mod->module_init(&kapi);
-                kprintf("[MODULE] Loaded: %s\n", mod->name);
+                gk.sched_mods[gk.sched_mod_count++] = mod;
+                if (!gk.sched) {
+		   		    gk.sched = (struct SCHED_API*)mod->module_init(&kapi);
+                }
+                kprintf("[MODULE] Registered Scheduler: %s\n", mod->name);
 			}
-			if (mod->type == MT_HEAP) {
-			    gk.heap = (struct HEAP_API*)mod->module_init(&kapi);
-			    kprintf("[MODULE] Loaded: %s\n", mod->name);
+			else if (mod->type == MT_HEAP && gk.heap_mod_count < 8) {
+                gk.heap_mods[gk.heap_mod_count++] = mod;
+                if (!gk.heap) {
+			        gk.heap = (struct HEAP_API*)mod->module_init(&kapi);
+                }
+			    kprintf("[MODULE] Registered Heap: %s\n", mod->name);
 			}
-			if (mod->type == MT_BLOCKDEV) {
+            else if (mod->type == MT_PMM && gk.pmm_mod_count < 8) {
+                gk.pmm_mods[gk.pmm_mod_count++] = mod;
+                if (!gk.pmm) {
+                    gk.pmm = (struct PMM_API*)mod->module_init(&kapi);
+                }
+                kprintf("[MODULE] Registered PMM: %s\n", mod->name);
+            }
+			else if (mod->type == MT_BLOCKDEV && gk.block_mod_count < 8) {
+                gk.block_mods[gk.block_mod_count++] = mod;
 	            if (gk.disk_count < 8) {
 	                BLOCKDEV_API* dev = (BLOCKDEV_API*)mod->module_init(&kapi);
 	                if (dev) {
 	                    gk.disks[gk.disk_count++] = dev;
 	                    if (!gk.current_disk) gk.current_disk = dev; // First drive becomes active
-	                    kprintf("[MODULE] Block Device: %s (%s)\n", mod->name, dev->name);
+	                    kprintf("[MODULE] Registered Block Device: %s (%s)\n", mod->name, dev->name);
 	                }
 	            }
 	        }
-	        if (mod->type == MT_FS) {
-                gk.fs = (FS_API*)mod->module_init(&kapi);
-                kprintf("[MODULE] Filesystem: %s\n", mod->name);
+	        else if (mod->type == MT_FS && gk.fs_mod_count < 8) {
+                gk.fs_mods[gk.fs_mod_count++] = mod;
+                if (!gk.fs) {
+                    gk.fs = (FS_API*)mod->module_init(&kapi);
+                }
+                kprintf("[MODULE] Registered Filesystem: %s\n", mod->name);
             }
         }
         mod++;

@@ -28,6 +28,13 @@ static inline void outb(uint16_t port, uint8_t val)
 	asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
+static inline uint8_t inb(uint16_t port)
+{
+	uint8_t ret;
+	asm volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+	return ret;
+}
+
 void pic_remap()
 {
 	outb(0x20, 0x11); outb(0xA0, 0x11); // ICW1: Init PICs
@@ -56,23 +63,41 @@ void init_idt()
 
 extern "C" Registers* isr_handler(Registers * regs)
 {
+	// 1. Hardware IRQs (32 to 47)
 	if(regs->int_no >= 32 && regs->int_no <= 47)
 	{
-		if(regs->int_no>=40)outb(0xA0,0x20);
-		outb(0x20,0x20);
+		if(regs->int_no >= 40) outb(0xA0, 0x20);
+		outb(0x20, 0x20);
+
+		if (regs->int_no == 32) 
+		{
+			return schedule_next_task(regs);
+		}
+		else if(regs->int_no == 33)
+		{
+			keyboard_handler(regs);
+		}
+		else if(regs->int_no == 42 || regs->int_no == 46 || regs->int_no == 47)
+		{
+			// Acknowledge and clear ATA disk controller interrupt
+			inb(0x1F7);
+		}
+		return regs;
 	}
-	if (regs->int_no == 32) 
+
+	// 2. Real CPU Exceptions (0 to 31) - Crashes, Page faults, etc.
+	if (regs->int_no < 32)
 	{
-		return schedule_next_task(regs);
+		kprintf("\n[CPU EXCEPTION %d] Error Code: %d | RIP: %x\n", regs->int_no, regs->err_code, regs->rip);
+		extern Process* curr_task;
+		if (curr_task && curr_task->pid != 0) {
+			kprintf("[FAULT ISOLATION] Terminated crashed PID %d. Kernel remaining alive!\n", curr_task->pid);
+			curr_task->state = 0;
+			return schedule_next_task(regs);
+		}
+		while (1) asm volatile("hlt");
 	}
-	else if(regs->int_no == 33)
-	{
-		keyboard_handler(regs);
-	}
-	else 
-	{
-		 kprintf("[INTERRUPT] Fired Interrupt: %d | Error Code: %d | EIP: %x\n", regs->int_no, regs->err_code, regs->rip);
-	}
+
 	return regs;
 }
 

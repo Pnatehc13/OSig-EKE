@@ -16,6 +16,11 @@
 #define KEY_F11  0x57
 #define KEY_F12  0x58
 
+#define KEY_UP    ((char)0x80)
+#define KEY_DOWN  ((char)0x81)
+#define KEY_LEFT  ((char)0x82)
+#define KEY_RIGHT ((char)0x83)
+
 bool is_key_down(uint8_t scancode);
 bool is_ctrl_down();
 bool is_shift_down();

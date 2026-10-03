@@ -18,6 +18,8 @@ struct KernelAPI
 };
 
 
+struct ModuleHeader;
+
 struct Kernel
 {
 	struct PMM_API* pmm; 
@@ -30,6 +32,14 @@ struct Kernel
     struct BLOCKDEV_API* current_disk; // active drive channel
     struct FS_API* fs;
 
+	// Module Registry Arrays (categorized by type)
+	struct ModuleHeader* sched_mods[8];   uint32_t sched_mod_count;
+	struct ModuleHeader* heap_mods[8];    uint32_t heap_mod_count;
+	struct ModuleHeader* pmm_mods[8];     uint32_t pmm_mod_count;
+	struct ModuleHeader* block_mods[8];   uint32_t block_mod_count;
+	struct ModuleHeader* fs_mods[8];      uint32_t fs_mod_count;
+	struct ModuleHeader* all_mods[32];    uint32_t total_mod_count;
+
 	uint32_t heapcnt;
 	uint32_t oldcnt;
 	uint32_t flag;
@@ -38,6 +48,10 @@ struct Kernel
 
 typedef struct KernelAPI KernelAPI;
 
+#ifdef __cplusplus
 extern "C" struct KernelAPI kapi;
+#else
+extern struct KernelAPI kapi;
+#endif
 
 #endif

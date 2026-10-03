@@ -16,8 +16,42 @@ static inline void outb(unsigned short port, unsigned char val) {
     asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
+static inline unsigned char inb(unsigned short port) {
+    unsigned char ret;
+    asm volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+}
+
+static void init_serial() {
+    outb(0x3F8 + 1, 0x00);    // Disable all interrupts
+    outb(0x3F8 + 3, 0x80);    // Enable DLAB
+    outb(0x3F8 + 0, 0x03);    // 38400 baud
+    outb(0x3F8 + 1, 0x00);
+    outb(0x3F8 + 3, 0x03);    // 8 bits, no parity, 1 stop bit
+    outb(0x3F8 + 2, 0xC7);    // Enable FIFO
+    outb(0x3F8 + 4, 0x0B);    // RTS/DSR set
+}
+
+static inline void write_serial(char a) {
+    int timeout = 10000;
+    while ((inb(0x3F8 + 5) & 0x20) == 0 && --timeout > 0);
+    outb(0x3F8, a);
+}
+
 static void update_hardware_cursor() {
     unsigned short pos = terminal_row * VGA_WIDTH + terminal_column;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (unsigned char)(pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (unsigned char)((pos >> 8) & 0xFF));
+}
+
+extern "C" void update_cursor(int x, int y) {
+    if (x < 0) x = 0;
+    if (x >= (int)VGA_WIDTH) x = VGA_WIDTH - 1;
+    if (y < 0) y = 0;
+    if (y >= (int)VGA_HEIGHT) y = VGA_HEIGHT - 1;
+    unsigned short pos = y * VGA_WIDTH + x;
     outb(0x3D4, 0x0F);
     outb(0x3D5, (unsigned char)(pos & 0xFF));
     outb(0x3D4, 0x0E);
@@ -102,6 +136,7 @@ static void terminal_scroll() {
 }
 
 extern "C" void terminal_initialize() {
+    init_serial();
     terminal_row = 0;
     terminal_column = 0;
     terminal_color = (VGA_COLOR_BLACK << 4) | VGA_COLOR_LIGHT_CYAN;
@@ -121,6 +156,9 @@ extern "C" void terminal_setcolor(unsigned char color) {
 }
 
 extern "C" void terminal_putchar(char c) {
+    if (c == '\n') write_serial('\r');
+    write_serial(c);
+
     if (scroll_offset > 0) {
         scroll_offset = 0;
         terminal_render();

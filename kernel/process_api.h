@@ -12,6 +12,8 @@ typedef struct Process
 	struct Registers* reg;
 	uint32_t state;
 	void* sched_data;
+
+	struct Process* next;
 }Process;
 
 #endif
